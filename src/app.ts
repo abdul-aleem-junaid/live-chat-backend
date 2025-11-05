@@ -11,6 +11,7 @@ import chatRouter from "./routes/chat";
 import { socketAuth } from "./middleware/socketAuth";
 import { handleSocketConnection } from "./utils/socketHandlers";
 import connectMongoDb from "./connection";
+import "./keep-alive";
 
 dotenv.config();
 
@@ -163,11 +164,13 @@ const startServer = async (): Promise<void> => {
     await connectMongoDb(MONGODB_URI);
     console.log("Database connected successfully");
 
-    server.listen(PORT, "0.0.0.0", () => {
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
-      console.log(`Server listening on 0.0.0.0:${PORT}`);
       console.log("Health check endpoint: /health");
     });
+    
+    server.keepAliveTimeout = 120000;
+    server.headersTimeout = 120000;
 
     // Add server error handling
     server.on("error", (error) => {
