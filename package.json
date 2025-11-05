@@ -17,7 +17,8 @@
     "dev": "nodemon --exec ts-node src/app.ts",
     "dev:watch": "tsc --watch",
     "clean": "rimraf dist",
-    "prebuild": "npm run clean"
+    "prebuild": "npm run clean",
+    "postinstall": "npm run build"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

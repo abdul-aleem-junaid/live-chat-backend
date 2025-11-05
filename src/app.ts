@@ -128,12 +128,11 @@ const startServer = async (): Promise<void> => {
   try {
     await connectMongoDb(MONGODB_URI);
 
-    server.listen(PORT, () => {
-      if (NODE_ENV === "development") {
-        // Development logging only
-      }
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {
+    console.error('Failed to start server:', error);
     process.exit(1);
   }
 };
