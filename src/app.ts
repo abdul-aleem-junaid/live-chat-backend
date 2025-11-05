@@ -54,13 +54,14 @@ app.use(
   })
 );
 
-// Rate limiting
+// Rate limiting (skip for health checks)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: NODE_ENV === "production" ? 100 : 1000,
   message: { error: "Too many requests from this IP" },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.path === '/health' || req.path === '/'
 });
 
 app.use("/api/", limiter);
@@ -80,10 +81,22 @@ app.use("/api/chat", chatRouter);
 
 // Health check
 app.get("/health", (req: Request, res: Response) => {
+  console.log('Health check requested');
   res.status(200).json({
     status: "OK",
     timestamp: new Date().toISOString(),
     environment: NODE_ENV,
+    port: PORT
+  });
+});
+
+// Root endpoint
+app.get("/", (req: Request, res: Response) => {
+  console.log('Root endpoint requested');
+  res.status(200).json({
+    message: "Live Chat Backend API",
+    status: "running",
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -136,6 +149,13 @@ const startServer = async (): Promise<void> => {
 
     server.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT}`);
+      console.log(`Server listening on 0.0.0.0:${PORT}`);
+      console.log('Health check endpoint: /health');
+    });
+    
+    // Add server error handling
+    server.on('error', (error) => {
+      console.error('Server error:', error);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
