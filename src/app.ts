@@ -126,16 +126,34 @@ process.on("SIGINT", () => {
 // Start server
 const startServer = async (): Promise<void> => {
   try {
+    console.log('Starting server...');
+    console.log('PORT:', PORT);
+    console.log('MONGODB_URI:', MONGODB_URI ? 'Set' : 'Not set');
+    console.log('NODE_ENV:', NODE_ENV);
+    
     await connectMongoDb(MONGODB_URI);
+    console.log('Database connected successfully');
 
     server.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'Unknown error');
     process.exit(1);
   }
 };
+
+// Add uncaught exception handlers
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
 
 startServer();
 
