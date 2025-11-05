@@ -62,7 +62,7 @@ export const handleSignIn = async (
     // Allow login with either email or username
     const foundUser = await UserModel.findOne({
       $or: [{ email }, { username: email }]
-    }).select('+password +salt').exec();
+    }).select('+password').exec();
       
     if (!foundUser) {
       res.status(401).json({ message: 'Invalid credentials' });

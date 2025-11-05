@@ -6,7 +6,6 @@ export interface IUser extends Document {
   username: string;
   email?: string;
   password: string;
-  salt: string;
   profilePicture?: string;
   validatePassword(inputPassword: string): Promise<boolean>;
 }

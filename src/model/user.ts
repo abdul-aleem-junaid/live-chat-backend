@@ -14,7 +14,6 @@ const userSchema = new Schema<IUser>(
     },
     email: {
       type: String,
-      required: true,
       unique: true,
       sparse: true,
       lowercase: true,
@@ -25,7 +24,7 @@ const userSchema = new Schema<IUser>(
       required: true,
       minlength: 6,
     },
-    salt: { type: String },
+    profilePicture: { type: String },
   },
   {
     timestamps: true,
@@ -35,8 +34,8 @@ const userSchema = new Schema<IUser>(
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 
-  this.salt = await bcrypt.genSalt(12);
-  this.password = await bcrypt.hash(this.password, this.salt);
+  const saltRounds = 12;
+  this.password = await bcrypt.hash(this.password, saltRounds);
   next();
 });
 
@@ -49,7 +48,6 @@ userSchema.methods.validatePassword = async function (
 userSchema.methods.toJSON = function () {
   const user = this.toObject();
   delete user.password;
-  delete user.salt;
   return user;
 };
 
