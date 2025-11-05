@@ -24,8 +24,10 @@ const server = http.createServer(app);
 
 const allowedOrigins = [
   "http://localhost:3000",
+  "https://localhost:3000",
   "http://localhost:3001",
   "https://live-chat-frontend-gilt.vercel.app",
+  "https://live-chat-backend-production-09f2.up.railway.app",
 ];
 
 const io = new Server(server, {
