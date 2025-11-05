@@ -36,8 +36,8 @@ export const validateSignup = [
 
 export const validateSignin = [
   body('email')
-    .notEmpty()
-    .withMessage('Email is required'),
+    .isEmail()
+    .withMessage('Valid email is required'),
   body('password')
     .notEmpty()
     .withMessage('Password is required')
@@ -59,10 +59,9 @@ export const handleSignIn = async (
 
     const { email, password }: SigninRequest = req.body;
 
-    // Allow login with either email or username
-    const foundUser = await UserModel.findOne({
-      $or: [{ email }, { username: email }]
-    }).select('+password').exec();
+    const foundUser = await UserModel.findOne({ email })
+      .select('+password +salt')
+      .exec();
       
     if (!foundUser) {
       res.status(401).json({ message: 'Invalid credentials' });

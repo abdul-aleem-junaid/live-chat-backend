@@ -11,7 +11,6 @@ import chatRouter from "./routes/chat";
 import { socketAuth } from "./middleware/socketAuth";
 import { handleSocketConnection } from "./utils/socketHandlers";
 import connectMongoDb from "./connection";
-import "./keep-alive";
 
 dotenv.config();
 
@@ -25,9 +24,9 @@ const server = http.createServer(app);
 
 const allowedOrigins = [
   "http://localhost:3000",
+  "http://localhost:3001",
   "https://live-chat-frontend-gilt.vercel.app",
-  process.env.CLIENT_URL,
-].filter((origin): origin is string => Boolean(origin));
+];
 
 const io = new Server(server, {
   cors: {
@@ -63,25 +62,14 @@ app.use(
   })
 );
 
-// Rate limiting (skip for health checks)
+// Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: NODE_ENV === "production" ? 100 : 1000,
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: { error: "Too many requests from this IP" },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => req.path === "/health" || req.path === "/",
 });
 
 app.use("/api/", limiter);
-
-// Request logging middleware
-app.use((req: Request, res: Response, next: NextFunction) => {
-  console.log(
-    `${new Date().toISOString()} - ${req.method} ${req.path} - IP: ${req.ip}`
-  );
-  next();
-});
 
 // Body parsing middleware
 app.use(express.json({ limit: "1mb" }));
@@ -95,27 +83,6 @@ if (NODE_ENV === "production") {
 // API Routes
 app.use("/api/user", userRouter);
 app.use("/api/chat", chatRouter);
-
-// Health check
-app.get("/health", (req: Request, res: Response) => {
-  console.log("Health check requested");
-  res.status(200).json({
-    status: "OK",
-    timestamp: new Date().toISOString(),
-    environment: NODE_ENV,
-    port: PORT,
-  });
-});
-
-// Root endpoint
-app.get("/", (req: Request, res: Response) => {
-  console.log("Root endpoint requested");
-  res.status(200).json({
-    message: "Live Chat Backend API",
-    status: "running",
-    timestamp: new Date().toISOString(),
-  });
-});
 
 // Socket.IO
 io.use(socketAuth);
@@ -156,21 +123,11 @@ process.on("SIGINT", () => {
 // Start server
 const startServer = async (): Promise<void> => {
   try {
-    console.log("Starting server...");
-    console.log("PORT:", PORT);
-    console.log("MONGODB_URI:", MONGODB_URI ? "Set" : "Not set");
-    console.log("NODE_ENV:", NODE_ENV);
-
     await connectMongoDb(MONGODB_URI);
-    console.log("Database connected successfully");
 
     server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log("Health check endpoint: /health");
+      console.log(`Server running on http://localhost:${PORT}`);
     });
-    
-    server.keepAliveTimeout = 120000;
-    server.headersTimeout = 120000;
 
     // Add server error handling
     server.on("error", (error) => {
@@ -185,17 +142,6 @@ const startServer = async (): Promise<void> => {
     process.exit(1);
   }
 };
-
-// Add uncaught exception handlers
-process.on("uncaughtException", (error) => {
-  console.error("Uncaught Exception:", error);
-  process.exit(1);
-});
-
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("Unhandled Rejection at:", promise, "reason:", reason);
-  process.exit(1);
-});
 
 startServer();
 
