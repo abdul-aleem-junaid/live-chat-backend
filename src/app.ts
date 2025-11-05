@@ -22,9 +22,15 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 const app = express();
 const server = http.createServer(app);
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://live-chat-frontend-gilt.vercel.app",
+  process.env.CLIENT_URL,
+].filter((origin): origin is string => Boolean(origin));
+
 const io = new Server(server, {
   cors: {
-    origin: NODE_ENV === "production" ? process.env.CLIENT_URL : "*",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -49,8 +55,10 @@ app.use(
 
 app.use(
   cors({
-    origin: NODE_ENV === "production" ? process.env.CLIENT_URL : "*",
+    origin: allowedOrigins,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -61,14 +69,16 @@ const limiter = rateLimit({
   message: { error: "Too many requests from this IP" },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.path === '/health' || req.path === '/'
+  skip: (req) => req.path === "/health" || req.path === "/",
 });
 
 app.use("/api/", limiter);
 
 // Request logging middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - IP: ${req.ip}`);
+  console.log(
+    `${new Date().toISOString()} - ${req.method} ${req.path} - IP: ${req.ip}`
+  );
   next();
 });
 
@@ -87,22 +97,22 @@ app.use("/api/chat", chatRouter);
 
 // Health check
 app.get("/health", (req: Request, res: Response) => {
-  console.log('Health check requested');
+  console.log("Health check requested");
   res.status(200).json({
     status: "OK",
     timestamp: new Date().toISOString(),
     environment: NODE_ENV,
-    port: PORT
+    port: PORT,
   });
 });
 
 // Root endpoint
 app.get("/", (req: Request, res: Response) => {
-  console.log('Root endpoint requested');
+  console.log("Root endpoint requested");
   res.status(200).json({
     message: "Live Chat Backend API",
     status: "running",
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -145,39 +155,42 @@ process.on("SIGINT", () => {
 // Start server
 const startServer = async (): Promise<void> => {
   try {
-    console.log('Starting server...');
-    console.log('PORT:', PORT);
-    console.log('MONGODB_URI:', MONGODB_URI ? 'Set' : 'Not set');
-    console.log('NODE_ENV:', NODE_ENV);
-    
-    await connectMongoDb(MONGODB_URI);
-    console.log('Database connected successfully');
+    console.log("Starting server...");
+    console.log("PORT:", PORT);
+    console.log("MONGODB_URI:", MONGODB_URI ? "Set" : "Not set");
+    console.log("NODE_ENV:", NODE_ENV);
 
-    server.listen(PORT, '0.0.0.0', () => {
+    await connectMongoDb(MONGODB_URI);
+    console.log("Database connected successfully");
+
+    server.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Server listening on 0.0.0.0:${PORT}`);
-      console.log('Health check endpoint: /health');
+      console.log("Health check endpoint: /health");
     });
-    
+
     // Add server error handling
-    server.on('error', (error) => {
-      console.error('Server error:', error);
+    server.on("error", (error) => {
+      console.error("Server error:", error);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'Unknown error');
+    console.error("Failed to start server:", error);
+    console.error(
+      "Error stack:",
+      error instanceof Error ? error.stack : "Unknown error"
+    );
     process.exit(1);
   }
 };
 
 // Add uncaught exception handlers
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught Exception:", error);
   process.exit(1);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
   process.exit(1);
 });
 
