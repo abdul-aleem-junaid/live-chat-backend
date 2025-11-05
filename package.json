@@ -18,7 +18,9 @@
     "dev:watch": "tsc --watch",
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
-    "postinstall": "npm run build"
+    "postinstall": "npm run build",
+    "railway:build": "npm run build",
+    "railway:start": "npm start"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
