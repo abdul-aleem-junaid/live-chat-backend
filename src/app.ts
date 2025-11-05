@@ -66,6 +66,12 @@ const limiter = rateLimit({
 
 app.use("/api/", limiter);
 
+// Request logging middleware
+app.use((req: Request, res: Response, next: NextFunction) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - IP: ${req.ip}`);
+  next();
+});
+
 // Body parsing middleware
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
